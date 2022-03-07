@@ -42,7 +42,7 @@ except:
 
 
 __all__ = ['LiberaBBBFrontEnd', 'LiberaBBBFrontEndClass', 'main']
-__version = '1.0.0'  # managed with bumpversion (do not update manually)
+__version = '1.0.1'  # managed with bumpversion (do not update manually)
 
 
 # libera BBFE attributes
