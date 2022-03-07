@@ -283,13 +283,16 @@ class LiberaBBBFrontEnd(DeviceImpl):
             self.sock.connect((self.Host, self.Port))
             # try to start and clean scpi console
             data = self.sock.recv(self.SIZE)
+            data = data.decode('ascii')
             self.debug_stream('init_device conn: %s' % repr(data))
-            self.sock.send("scpi>\r\n")
+            self.sock.send(b'scpi>\r\n')
             data = self.sock.recv(4096)
+            data = data.decode('ascii')
             self.debug_stream('init_device scpi: %s' % repr(data))
             # read IDN to check communication
-            self.sock.send("*IDN?\r\n")
+            self.sock.send(b'*IDN?\r\n')
             data = self.sock.recv(self.SIZE)
+            data = data.decode('ascii')
             self.debug_stream('init_device *IDN: %s' % repr(data))
             if (data.find('BBFE') != -1):
                 msg = 'System seems OK'
@@ -312,9 +315,9 @@ class LiberaBBBFrontEnd(DeviceImpl):
 
     def read_attr(self, attr):
         name = attr.get_name()
-        cmd = attributes[name][1]
+        cmd = bytes(attributes[name][1], 'ascii')
         # command should be something like 'BRI:AWA?\r\n'
-        cmd += '?\r\n'
+        cmd += b'?\r\n'
         self.debug_stream('read_%s sending command: %s' % (name, repr(cmd)))
         try:
             self.sock.send(cmd)
@@ -325,6 +328,7 @@ class LiberaBBBFrontEnd(DeviceImpl):
             #   or even (note ' character):
             #   "PHA:CLO:1 +020'\r\nOK\r\nscpi>"
             answer = self.sock.recv(self.SIZE)
+            answer = answer.decode('ascii')
             self.debug_stream('read_%s answer: %s' % (name, repr(answer)))
         except Exception as e:
             msg = 'Comm error while requesting data from instrument'
@@ -353,10 +357,12 @@ class LiberaBBBFrontEnd(DeviceImpl):
         name = attr.get_name()
         value = attr.get_write_value()
         cmd = '%s %s\r\n' % (attributes[name][1], str(value))
+        cmd = bytes(cmd, 'ascii')
         self.debug_stream('write_%s sending command: %s' % (name, repr(cmd)))
         try:
-            self.sock.send(cmd)
+            self.sock.send(bytes(cmd))
             answer = self.sock.recv(self.SIZE)
+            answer = answer.decode('ascii')
             self.debug_stream('write_%s answer: %s' % (name, repr(answer)))
         except Exception as e:
             msg = 'Comm error while sending data to instrument'
@@ -372,11 +378,12 @@ class LiberaBBBFrontEnd(DeviceImpl):
                 'write_attr', msg, '%s.write_attr()' % self.__class__.__name__)
 
     def Reset(self):
-        cmd = '*RST\r\n'
+        cmd = b'*RST\r\n'
         self.debug_stream('Reset sending command: %s' % repr(cmd))
         try:
             self.sock.send(cmd)
             answer = self.sock.recv(self.SIZE)
+            answer = answer.decode('ascii')
             self.debug_stream('Reset answer: %s' % repr(answer))
         except Exception as e:
             msg = 'Comm error while sending command to instrument'
@@ -441,7 +448,7 @@ class LiberaBBBFrontEnd(DeviceImpl):
     def initialize_dynamic_attributes(self):
         try:
             self.debug_stream('Initializing dynamic attributes')
-            for attr_name, props in attributes.items():
+            for attr_name, props in list(attributes.items()):
                 type_, read_, write_, desc_, min_, max_, units_ = props
                 if write_ is not None:
                     rw = tango.AttrWriteType.READ_WRITE
@@ -524,9 +531,9 @@ def main():
         U.server_init()
         U.server_run()
     except tango.DevFailed as e:
-        print('-------> Received a DevFailed exception:', e)
+        print(('-------> Received a DevFailed exception:', e))
     except Exception as e:
-        print('-------> An unforeseen exception occurred....', e)
+        print(('-------> An unforeseen exception occurred....', e))
 
 
 if __name__ == '__main__':
